@@ -537,6 +537,12 @@ def handler(signal_received, frame):
     sys.exit(0)
 
 
+def _spreadsheet_text(value):
+    if isinstance(value, str) and value.lstrip().startswith(('=', '+', '-', '@')):
+        return "'" + value
+    return value
+
+
 def main():
     parser = ArgumentParser(
         formatter_class=RawDescriptionHelpFormatter,
@@ -813,6 +819,10 @@ def main():
         else:
             all_usernames.append(username)
     for username in all_usernames:
+        # A username must never select a directory or Windows device/stream.
+        report_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', username).strip('. ') or '_'
+        if re.match(r'^(CON|PRN|AUX|NUL|COM[1-9\u00b9\u00b2\u00b3]|LPT[1-9\u00b9\u00b2\u00b3])(?:\.|$)', report_name, re.I):
+            report_name = '_' + report_name
         results = sherlock(
             username,
             site_data,
@@ -828,9 +838,9 @@ def main():
             # The usernames results should be stored in a targeted folder.
             # If the folder doesn't exist, create it first
             os.makedirs(args.folderoutput, exist_ok=True)
-            result_file = os.path.join(args.folderoutput, f"{username}.txt")
+            result_file = os.path.join(args.folderoutput, f"{report_name}.txt")
         else:
-            result_file = f"{username}.txt"
+            result_file = f"{report_name}.txt"
 
         if args.output_txt:
             with open(result_file, "w", encoding="utf-8") as file:
@@ -843,7 +853,7 @@ def main():
                 file.write(f"Total Websites Username Detected On : {exists_counter}\n")
 
         if args.csv:
-            result_file = f"{username}.csv"
+            result_file = f"{report_name}.csv"
             if args.folderoutput:
                 # The usernames results should be stored in a targeted folder.
                 # If the folder doesn't exist, create it first
@@ -875,7 +885,7 @@ def main():
                     if response_time_s is None:
                         response_time_s = ""
                     writer.writerow(
-                        [
+                        [_spreadsheet_text(value) for value in [
                             username,
                             site,
                             results[site]["url_main"],
@@ -883,7 +893,7 @@ def main():
                             str(results[site]["status"].status),
                             results[site]["http_status"],
                             response_time_s,
-                        ]
+                        ]]
                     )
         if args.xlsx:
             usernames = []
@@ -917,14 +927,14 @@ def main():
                 {
                     "username": usernames,
                     "name": names,
-                    "url_main": [f'=HYPERLINK(\"{u}\")' for u in url_main],
-                    "url_user": [f'=HYPERLINK(\"{u}\")' for u in url_user],
+                    "url_main": url_main,
+                    "url_user": url_user,
                     "exists": exists,
                     "http_status": http_status,
                     "response_time_s": response_time_s,
                 }
             )
-            DataFrame.to_excel(f"{username}.xlsx", sheet_name="sheet1", index=False)
+            DataFrame.map(_spreadsheet_text).to_excel(f"{report_name}.xlsx", sheet_name="sheet1", index=False)
 
         print()
     query_notify.finish()
