@@ -2,6 +2,20 @@
 
 Baseline: `e40a45ec2a074b90703b3b4b842c8a3adbd6ada3`.
 
+## Follow-up privacy review — 2026-10-18
+
+A real local HTTP request with a synthetic NETRC file demonstrated that account
+searches automatically attached matching local credentials. Searches and
+project-owned manifest/update downloads now use sessions with trust_env=False.
+This blocks implicit netrc authentication, including requests redirect handling.
+Explicit proxies remain supported; environment proxies and requests CA-bundle
+variables are no longer inherited on these paths. TLS verification stays enabled.
+
+The relevant suite passed 29 tests, including the new real-request credential
+regression. Only a synthetic credential file was read by the pre-fix test, never
+the user's real credentials. The Windows process still has the current user's
+filesystem permissions; this hardening is not an OS sandbox.
+
 ## Fixes
 
 Usernames such as `../outside` previously caused automatically named TXT, CSV and XLSX reports to be written outside the working/output directory. Three end-to-end CLI tests reproduced this with network calls mocked. Generated filenames now replace path separators, control characters and Windows-invalid characters, and guard reserved Windows device names. The search username and an explicitly requested `--output` path remain unchanged. Existing output overwrite behavior and possible sanitized-name collisions are unchanged.

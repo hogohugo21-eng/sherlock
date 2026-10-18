@@ -11,7 +11,7 @@ from sherlock_project.result import QueryResult, QueryStatus
 def test_export_does_not_create_formulas(tmp_path, monkeypatch, option):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr('sys.argv', ['sherlock', '=1+1', option, '--local'])
-    monkeypatch.setattr(sherlock.requests, 'get', Mock(side_effect=RuntimeError('offline')))
+    monkeypatch.setattr(sherlock, 'http_get', Mock(side_effect=RuntimeError('offline')))
     monkeypatch.setattr(sherlock, 'SitesInformation', Mock(return_value=Mock(__iter__=lambda self: iter([]))))
     result = QueryResult('=1+1', '=2+2', '=3+3', QueryStatus.CLAIMED, query_time=0.1)
     monkeypatch.setattr(sherlock, 'sherlock', Mock(return_value={

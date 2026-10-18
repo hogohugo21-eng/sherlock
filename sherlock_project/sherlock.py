@@ -27,6 +27,7 @@ from time import monotonic
 from typing import Optional
 
 import requests
+from .network import get as http_get, session as private_session
 from requests_futures.sessions import FuturesSession
 
 from sherlock_project.__init__ import (
@@ -210,7 +211,7 @@ def sherlock(
     query_notify.start(username)
 
     # Normal requests
-    underlying_session = requests.session()
+    underlying_session = private_session()
 
     # Limit number of workers to 20.
     # This is probably vastly overkill.
@@ -706,7 +707,7 @@ def main():
 
     # Check for newer version of Sherlock. If it exists, let the user know about it
     try:
-        latest_release_raw = requests.get(forge_api_latest_release, timeout=10).text
+        latest_release_raw = http_get(forge_api_latest_release, timeout=10).text
         latest_release_json = json_loads(latest_release_raw)
         latest_remote_tag = latest_release_json["tag_name"]
 
@@ -754,7 +755,7 @@ def main():
                 if args.json_file.isnumeric():
                     pull_number = args.json_file
                     pull_url = f"https://api.github.com/repos/sherlock-project/sherlock/pulls/{pull_number}"
-                    pull_request_raw = requests.get(pull_url, timeout=10).text
+                    pull_request_raw = http_get(pull_url, timeout=10).text
                     pull_request_json = json_loads(pull_request_raw)
 
                     # Check if it's a valid pull request
