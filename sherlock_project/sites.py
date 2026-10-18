@@ -4,7 +4,7 @@ This module supports storing information about websites.
 This is the raw data that will be used to search for usernames.
 """
 import json
-import requests
+from . import network as requests
 import secrets
 
 
